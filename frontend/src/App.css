@@ -1,3 +1,4 @@
+/* Contenedor centrado que limita el ancho en pantallas grandes. */
 .store {
   max-width: 1240px;
   margin: auto;
@@ -49,6 +50,7 @@
   letter-spacing: 1.8px;
 }
 
+/* clamp adapta el título al ancho de pantalla sin superar estos límites. */
 h1 {
   margin: 0;
   font-size: clamp(30px, 4vw, 46px);
@@ -86,6 +88,7 @@ h2 { margin: 0; font-size: 21px; letter-spacing: -.5px; }
 
 .primary-button:hover:not(:disabled) { background: #303a66; }
 
+/* El catálogo y el formulario comparten columnas cuando hay espacio. */
 .catalog-layout { display: grid; gap: 24px; align-items: start; }
 .catalog-layout.with-form { grid-template-columns: minmax(0, 1fr) 340px; }
 
@@ -113,6 +116,7 @@ h2 { margin: 0; font-size: 21px; letter-spacing: -.5px; }
   font-weight: 600;
 }
 
+/* Permite desplazar la tabla horizontalmente si no cabe en la pantalla. */
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 
@@ -165,6 +169,7 @@ input {
   font-size: 14px;
 }
 
+/* El foco visible ayuda a navegar con teclado; el borde rojo identifica errores. */
 input::placeholder { color: #69747a; }
 input:focus { outline: 2px solid #3e497d; outline-offset: 2px; }
 input[aria-invalid="true"] { border-color: #b43d3d; }
@@ -174,6 +179,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #3e497d; outline-offs
 .field-error { margin: 7px 0 0; }
 .full-width { width: 100%; margin-top: 24px; }
 
+/* Los mensajes usan colores distintos para reconocer éxito y error. */
 .success-message {
   padding: 13px 16px;
   color: #225d42;
@@ -212,6 +218,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #3e497d; outline-offs
   font-size: 12px;
 }
 
+/* Oculta el texto visualmente sin quitarlo de los lectores de pantalla. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -220,6 +227,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #3e497d; outline-offs
   clip-path: inset(50%);
 }
 
+/* En pantallas pequeñas el formulario pasa debajo del catálogo. */
 @media (max-width: 900px) {
   .catalog-layout.with-form { grid-template-columns: 1fr; }
 }
@@ -233,6 +241,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #3e497d; outline-offs
   .site-footer { flex-direction: column; gap: 8px; }
 }
 
+/* Respeta la preferencia del usuario de reducir las animaciones. */
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation: none; }
 }

@@ -1,3 +1,4 @@
+// Conserva el mensaje general y los errores por campo recibidos de la API.
 export class ApiError extends Error {
   constructor(mensaje, errores = {}) {
     super(mensaje);
@@ -6,12 +7,14 @@ export class ApiError extends Error {
   }
 }
 
+// Centraliza la conexión para que los componentes no repitan fetch ni manejo HTTP.
 async function solicitar(opciones = {}, signal) {
   let respuesta;
 
   try {
     // Evita dejar la interfaz esperando indefinidamente.
     const timeout = AbortSignal.timeout(8000);
+    // La petición termina por tiempo agotado o por cancelación del componente.
     const combinedSignal = signal
       ? AbortSignal.any([signal, timeout])
       : timeout;
@@ -21,6 +24,7 @@ async function solicitar(opciones = {}, signal) {
       signal: combinedSignal,
     });
   } catch (error) {
+    // Una cancelación intencional no debe convertirse en un aviso de conexión.
     if (signal?.aborted) throw error;
 
     throw new ApiError(
@@ -28,8 +32,10 @@ async function solicitar(opciones = {}, signal) {
     );
   }
 
+  // Leer JSON también puede fallar; null permite mostrar un mensaje controlado.
   const contenido = await respuesta.json().catch(() => null);
 
+  // fetch no lanza errores por códigos 400 o 500: hay que comprobar respuesta.ok.
   if (!respuesta.ok) {
     throw new ApiError(
       contenido?.mensaje ?? "El catálogo no está disponible. Intenta nuevamente.",
@@ -41,10 +47,12 @@ async function solicitar(opciones = {}, signal) {
     throw new ApiError("El servidor devolvió una respuesta inesperada.");
   }
 
+  // Quita el envoltorio { datos: ... } antes de entregar el resultado a React.
   return contenido.datos;
 }
 
 export async function listarProductos(signal) {
+  // Sin opciones, fetch usa GET. La señal permite cancelar la carga.
   const productos = await solicitar({}, signal);
 
   if (!Array.isArray(productos)) {
@@ -54,6 +62,7 @@ export async function listarProductos(signal) {
   return productos;
 }
 
+// POST envía el producto como texto JSON y declara ese formato en la cabecera.
 export function crearProducto(producto) {
   return solicitar({
     method: "POST",

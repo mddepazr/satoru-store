@@ -1,3 +1,4 @@
+/* Estilos base: tipografía y colores generales de la paleta elegida. */
 :root {
   font-family: "Segoe UI", Arial, sans-serif;
   color: #192428;
@@ -6,6 +7,7 @@
   text-rendering: optimizeLegibility;
 }
 
+/* Incluye borde y relleno en el ancho declarado de cada elemento. */
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
 button, input { font: inherit; }

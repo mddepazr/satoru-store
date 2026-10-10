@@ -5,15 +5,19 @@ import ProductoTable from "./components/ProductoTable";
 import "./App.css";
 
 export default function App() {
+  // Estos estados guardan los datos y deciden qué muestra la interfaz.
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [formularioAbierto, setFormularioAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  // Cambiar este contador vuelve a ejecutar la carga para actualizar o reintentar.
   const [intento, setIntento] = useState(0);
 
+  // Consulta la API al montar el componente y cuando cambia intento.
   useEffect(() => {
+    // Permite cancelar una carga anterior y evitar que actualice esta pantalla.
     const controller = new AbortController();
 
     async function cargar() {
@@ -26,6 +30,7 @@ export default function App() {
         if (!controller.signal.aborted) setProductos(datos);
       } catch (fallo) {
         if (!controller.signal.aborted) setError(fallo.message);
+        // finally se ejecuta tanto si la consulta funciona como si falla.
       } finally {
         if (!controller.signal.aborted) setCargando(false);
       }
@@ -37,6 +42,7 @@ export default function App() {
     return () => controller.abort();
   }, [intento]);
 
+  // El formulario delega aquí el POST y la actualización de la lista compartida.
   async function guardar(producto) {
     setGuardando(true);
     setMensaje("");
@@ -45,8 +51,10 @@ export default function App() {
       const creado = await crearProducto(producto);
 
       // Agrega la respuesta real del servidor a la lista.
+      // La función usa el estado más reciente y crea un arreglo nuevo para React.
       setProductos((actuales) => [...actuales, creado]);
       setMensaje(`Se agregó "${creado.nombre}" al catálogo.`);
+      // Los errores suben al formulario; aquí solo se restablece el estado de guardado.
     } finally {
       setGuardando(false);
     }
@@ -104,6 +112,7 @@ export default function App() {
               </button>
             </div>
 
+            {/* Muestra una sola vista: carga, error con reintento o tabla. */}
             {cargando ? (
               <div className="loading-state" role="status">
                 <span className="spinner" aria-hidden="true" />
@@ -126,6 +135,7 @@ export default function App() {
             )}
           </section>
 
+          {/* Las props conectan el formulario con las acciones de este componente. */}
           {formularioAbierto && (
             <ProductoForm
               onGuardar={guardar}

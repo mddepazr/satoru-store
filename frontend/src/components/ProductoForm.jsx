@@ -1,26 +1,33 @@
 import { useState } from "react";
 
+// Recibe acciones del componente padre; no conoce la URL ni el almacenamiento.
 export default function ProductoForm({ onGuardar, onCerrar, bloqueado }) {
+  // Incluso el input numérico entrega texto; se convierte a número al enviar.
   const [campos, setCampos] = useState({
     nombre: "",
     precio: "",
     categoria: "",
   });
+  // errores corresponde a cada campo; error es el mensaje general del envío.
   const [errores, setErrores] = useState({});
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
 
   function cambiar(event) {
     const { name, value } = event.target;
+    // [name] modifica solo el campo editado; el resto conserva sus valores.
     setCampos((actual) => ({ ...actual, [name]: value }));
     setErrores((actual) => ({ ...actual, [name]: "" }));
     setError("");
   }
 
   async function enviar(event) {
+    // Evita la recarga del navegador para gestionar el envío con React.
     event.preventDefault();
+    // Bloquea envíos repetidos mientras hay una solicitud en curso.
     if (guardando || bloqueado) return;
 
+    // Valida para dar respuesta inmediata; la API vuelve a validar por seguridad.
     const nuevosErrores = {};
     const nombre = campos.nombre.trim();
     const categoria = campos.categoria.trim();
@@ -33,6 +40,7 @@ export default function ProductoForm({ onGuardar, onCerrar, bloqueado }) {
       nuevosErrores.categoria = "Escribe entre 2 y 40 caracteres.";
     }
     if (
+      // Comprueba el campo vacío porque Number("") devuelve 0.
       !campos.precio.trim() ||
       !Number.isFinite(precio) ||
       precio <= 0 ||
@@ -53,8 +61,10 @@ export default function ProductoForm({ onGuardar, onCerrar, bloqueado }) {
     setGuardando(true);
 
     try {
+      // Espera la confirmación del servidor antes de limpiar los campos.
       await onGuardar({ nombre, precio, categoria });
       setCampos({ nombre: "", precio: "", categoria: "" });
+      // Conserva lo escrito y muestra el error para que el usuario pueda corregirlo.
     } catch (fallo) {
       setErrores(fallo.errores ?? {});
       setError(fallo.message);
@@ -81,8 +91,11 @@ export default function ProductoForm({ onGuardar, onCerrar, bloqueado }) {
         </button>
       </div>
 
+      {/* noValidate permite mostrar nuestros mensajes en lugar de los avisos nativos. */}
       <form onSubmit={enviar} noValidate>
+        {/* Deshabilita todos los controles durante el envío o una falla de conexión. */}
         <fieldset disabled={guardando || bloqueado}>
+          {/* htmlFor une etiqueta y campo; aria-describedby une campo y error. */}
           <label htmlFor="nombre">Nombre</label>
           <input
             id="nombre"
