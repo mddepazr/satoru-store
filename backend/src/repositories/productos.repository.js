@@ -1,40 +1,27 @@
 import { randomUUID } from "node:crypto";
 
-// Se encarga únicamente del almacenamiento temporal de los productos.
+// Guarda documentos en MongoDB; no conoce las reglas de validación ni Express.
 export class ProductosRepository {
-  // # hace privado el arreglo. Al reiniciar la API se recuperan estos datos iniciales.
-  #productos = [
-    {
-      id: "producto-001",
-      nombre: "Teclado mecánico",
-      precio: 450,
-      categoria: "Periféricos",
-    },
-    {
-      id: "producto-002",
-      nombre: "Mouse inalámbrico",
-      precio: 175,
-      categoria: "Periféricos",
-    },
-    {
-      id: "producto-003",
-      nombre: "Monitor de 24 pulgadas",
-      precio: 1450,
-      categoria: "Monitores",
-    },
-  ];
+  #coleccion;
 
-  // El contrato async permite incorporar una base de datos sin cambiar el servicio.
+  constructor(coleccion) {
+    this.#coleccion = coleccion;
+  }
+
   async listar() {
-    // Devuelve copias para proteger el arreglo interno.
-    return this.#productos.map((producto) => ({ ...producto }));
+    const documentos = await this.#coleccion.find({}, {
+      projection: { _id: 1, nombre: 1, precio: 1, categoria: 1 },
+    }).toArray();
+
+    // MongoDB usa _id; la API conserva id para que React funcione igual.
+    return documentos.map(({ _id, ...producto }) => ({ id: _id, ...producto }));
   }
 
   async crear(datos) {
-    // El servidor genera el identificador; no depende de un id enviado por el usuario.
-    const producto = { ...datos, id: randomUUID() };
-    this.#productos.push(producto);
-    // Devuelve una copia para que el consumidor no modifique el objeto guardado.
-    return { ...producto };
+    const documento = { ...datos, _id: randomUUID() };
+    // Solo confirma el producto después de que MongoDB acepte la escritura.
+    await this.#coleccion.insertOne(documento);
+    const { _id, ...producto } = documento;
+    return { id: _id, ...producto };
   }
 }

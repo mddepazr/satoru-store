@@ -1,3 +1,5 @@
+import { MongoNetworkError, MongoServerSelectionError, MongoOperationTimeoutError } from "mongodb";
+
 // Express reconoce este middleware de errores por sus cuatro parámetros.
 export function manejarError(error, req, res, next) {
   // Si la respuesta ya comenzó, delega el error para evitar responder dos veces.
@@ -26,8 +28,19 @@ export function manejarError(error, req, res, next) {
     });
   }
 
-  // Registra el detalle en el servidor, pero no lo expone al usuario.
-  console.error(error);
+  // Si MongoDB deja de responder, informa una falla temporal sin revelar la conexión.
+  if (
+    error instanceof MongoNetworkError ||
+    error instanceof MongoServerSelectionError ||
+    error instanceof MongoOperationTimeoutError
+  ) {
+    return res.status(503).json({
+      mensaje: "La base de datos no está disponible. Intenta nuevamente.",
+    });
+  }
+
+  // Registra solo el tipo; los detalles podrían contener información de conexión.
+  console.error(`Error interno: ${error.name ?? "Error"}`);
 
   return res.status(500).json({
     mensaje: "Ocurrió un error en el servidor. Intenta nuevamente.",

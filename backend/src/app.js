@@ -1,5 +1,4 @@
 import express from "express";
-import { ProductosRepository } from "./repositories/productos.repository.js";
 import { ProductosService } from "./services/productos.service.js";
 import { crearProductosController } from "./controllers/productos.controller.js";
 import { crearProductosRouter } from "./routes/productos.routes.js";
@@ -7,7 +6,7 @@ import { manejarError } from "./middleware/error.middleware.js";
 
 // Construye la API sin abrir el puerto; permite usarla también en pruebas.
 // Puede recibir otro repositorio que implemente listar() y crear().
-export function crearApp(repository = new ProductosRepository()) {
+export function crearApp(repository) {
   const app = express();
 
   // Omite la cabecera que identifica Express; no reemplaza otras medidas de seguridad.

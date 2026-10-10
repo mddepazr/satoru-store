@@ -15,12 +15,17 @@ precio y categoría.
 - Opción de reintentar cuando falla la conexión.
 - Precios en quetzales e interfaz adaptable a pantallas pequeñas.
 
-Los datos se guardan en un arreglo temporal del backend.
-Al reiniciar el servidor, se restauran los tres productos iniciales.
+Los productos se guardan en **MongoDB**, en la base `satoru_store`,
+colección `productos`. Permanecen después de reiniciar la API y MongoDB.
 
 ## Ejecutar el proyecto
 
-Requisitos: Node.js 24 LTS y Git.
+Requisitos: Node.js 24 LTS, Git y MongoDB Community instalado como servicio local.
+
+En Windows, descarga [MongoDB Community](https://www.mongodb.com/try/download/community)
+(MSI), elige instalación **Complete** y deja marcada **Install MongoD as a Service**.
+Compass es opcional: permite ver la colección y tomar una captura de la base.
+La conexión local es `mongodb://127.0.0.1:27017`; no necesitas Docker ni Atlas.
 
 ```powershell
 git clone https://github.com/mddepazr/satoru-store.git
@@ -28,7 +33,16 @@ cd satoru-store
 
 npm.cmd --prefix backend ci
 npm.cmd --prefix frontend ci
+Copy-Item backend/.env.example backend/.env
+
+# MongoDB debe estar ejecutándose antes de cargar los ejemplos.
+npm.cmd --prefix backend run seed
 ```
+
+`seed` agrega los tres ejemplos sin borrar ni duplicar productos existentes.
+No se ejecuta al iniciar la API. Si ya tienes `backend/.env`, conserva su configuración.
+Para comprobar el servicio en PowerShell: `Get-Service MongoDB`.
+Si está detenido, inicia PowerShell como administrador y ejecuta `Start-Service MongoDB`.
 
 Desde la raíz del proyecto, abre dos terminales.
 
@@ -78,7 +92,7 @@ y tener hasta dos decimales.
 
 El usuario completa el formulario. React valida los campos y envía
 una solicitud con `fetch`. La API recibe el JSON, valida los datos
-y guarda el producto en memoria. Después devuelve el registro creado
+y guarda el producto en MongoDB. Después devuelve el registro creado
 y React lo incorpora a la lista.
 
 Durante el desarrollo, Vite redirige las solicitudes `/api` a Express.
@@ -92,7 +106,8 @@ la solicitud falla.
 | `backend/src/routes` | Rutas HTTP |
 | `backend/src/controllers` | Solicitudes y respuestas JSON |
 | `backend/src/services` | Validación y reglas de productos |
-| `backend/src/repositories` | Almacenamiento temporal |
+| `backend/src/repositories` | Consultas y escrituras en MongoDB |
+| `backend/src/config` | Conexión a la base de datos |
 | `backend/src/middleware` | Manejo central de errores |
 | `frontend/src/services` | Comunicación con la API |
 | `frontend/src/components` | Formulario y tabla |
@@ -100,15 +115,27 @@ la solicitud falla.
 | `docs` | Capturas de funcionamiento |
 
 El servicio recibe el repositorio por inyección de dependencias.
-Esto facilita reemplazar el arreglo por otro almacenamiento que
-mantenga los métodos `listar()` y `crear()`.
+El repositorio implementa `listar()` y `crear()` usando el controlador oficial de MongoDB.
+Internamente los documentos tienen `_id`; la API lo devuelve como `id` para React.
+La conexión se abre antes de iniciar Express y se cierra al detenerlo con Ctrl + C.
+Si MongoDB falla durante una consulta, la API devuelve JSON con estado 503.
+
+La configuración está en `backend/.env`: `MONGODB_URI`, `MONGODB_DB` y `PORT`.
+Este archivo no se sube a GitHub; `.env.example` contiene valores locales de ejemplo.
+Los productos del antiguo arreglo temporal no se migran automáticamente.
 
 ## Verificación y evidencias
 
 ```powershell
+npm.cmd --prefix backend test
 npm.cmd --prefix frontend run build
 npm.cmd --prefix frontend run lint
 ```
+
+Las pruebas usan un proceso MongoDB real y aislado; la primera ejecución descarga
+el binario de prueba y necesita internet. Comprueban persistencia tras reiniciar
+API y MongoDB, validaciones, carga inicial repetible y respuestas de error.
+No modifican `satoru_store`.
 
 | Evidencia | Captura |
 |---|---|
@@ -117,6 +144,11 @@ npm.cmd --prefix frontend run lint
 | Rechazo de precio negativo | [Ver](docs/03-precio-negativo.jpeg) |
 | Error de conexión y reintento | [Ver](docs/04-error-conexion.jpeg) |
 | Respuesta JSON de la API | [Ver](docs/05-respuesta-json.jpeg) |
+| Documentos guardados en MongoDB Compass | [Ver](docs/06-mongodb-productos.png) |
+| Catálogo después de reiniciar la API | [Ver](docs/07-producto-persistente.jpeg) |
+| Confirmación de producto agregado | [Ver](docs/08-producto-agregado.jpeg) |
+
+[Pasos para comprobar la persistencia y explicar el flujo](docs/verificar-mongodb.md).
 
 El proyecto corresponde a una demostración local.
 La compilación genera el frontend; un despliegue requiere configurar
