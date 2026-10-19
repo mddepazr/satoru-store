@@ -4,8 +4,8 @@ export function crearProductosController(service) {
   return {
     async listar(req, res) {
       const productos = await service.listar();
-      // 200 indica una consulta exitosa; datos contiene la lista.
-      res.status(200).json({ datos: productos });
+      // 200 indica una consulta exitosa; el cuerpo es directamente la lista.
+      res.status(200).json(productos);
     },
 
     async crear(req, res) {

@@ -43,12 +43,8 @@ async function solicitar(opciones = {}, signal) {
     );
   }
 
-  if (!contenido || !("datos" in contenido)) {
-    throw new ApiError("El servidor devolvió una respuesta inesperada.");
-  }
-
-  // Quita el envoltorio { datos: ... } antes de entregar el resultado a React.
-  return contenido.datos;
+  // GET devuelve un arreglo; POST conserva su objeto con mensaje y datos.
+  return contenido;
 }
 
 export async function listarProductos(signal) {
@@ -63,10 +59,14 @@ export async function listarProductos(signal) {
 }
 
 // POST envía el producto como texto JSON y declara ese formato en la cabecera.
-export function crearProducto(producto) {
-  return solicitar({
+export async function crearProducto(producto) {
+  const contenido = await solicitar({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(producto),
   });
+  if (!contenido?.datos || typeof contenido.datos.id !== "string") {
+    throw new ApiError("El servidor devolvió una respuesta inesperada.");
+  }
+  return contenido.datos;
 }

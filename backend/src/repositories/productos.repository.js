@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { normalizarNombre } from "../domain/nombre-producto.js";
+import { ProductoDuplicadoError } from "../errors/producto-duplicado.error.js";
 
-// Guarda documentos en MongoDB; no conoce las reglas de validación ni Express.
+// Solo el repositorio conoce el formato de los documentos en MongoDB.
 export class ProductosRepository {
   #coleccion;
 
@@ -12,16 +14,25 @@ export class ProductosRepository {
     const documentos = await this.#coleccion.find({}, {
       projection: { _id: 1, nombre: 1, precio: 1, categoria: 1 },
     }).toArray();
-
-    // MongoDB usa _id; la API conserva id para que React funcione igual.
     return documentos.map(({ _id, ...producto }) => ({ id: _id, ...producto }));
   }
 
   async crear(datos) {
-    const documento = { ...datos, _id: randomUUID() };
-    // Solo confirma el producto después de que MongoDB acepte la escritura.
-    await this.#coleccion.insertOne(documento);
-    const { _id, ...producto } = documento;
-    return { id: _id, ...producto };
+    const documento = {
+      ...datos,
+      _id: randomUUID(),
+      nombreNormalizado: normalizarNombre(datos.nombre),
+    };
+    try {
+      // El índice único protege incluso dos POST que llegan al mismo tiempo.
+      await this.#coleccion.insertOne(documento);
+    } catch (error) {
+      if (error.code === 11000 && error.keyPattern?.nombreNormalizado) {
+        throw new ProductoDuplicadoError();
+      }
+      throw error;
+    }
+    const { _id, nombre, precio, categoria } = documento;
+    return { id: _id, nombre, precio, categoria };
   }
 }

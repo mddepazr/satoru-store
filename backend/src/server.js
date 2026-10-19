@@ -1,3 +1,4 @@
+import { prepararColeccionProductos } from "./config/productos.collection.js";
 import { crearApp } from "./app.js";
 import { conectarBaseDeDatos } from "./config/database.js";
 import { ProductosRepository } from "./repositories/productos.repository.js";
@@ -8,7 +9,9 @@ let conexion;
 try {
   // Sin MongoDB no se inicia la API: evita aparentar que los datos se guardan.
   conexion = await conectarBaseDeDatos();
-  const repository = new ProductosRepository(conexion.db.collection("productos"));
+  const coleccion = conexion.db.collection("productos");
+  await prepararColeccionProductos(coleccion);
+  const repository = new ProductosRepository(coleccion);
   const app = crearApp(repository);
 
   const servidor = app.listen(puerto, "127.0.0.1", () => {
@@ -33,9 +36,11 @@ try {
   }
   process.once("SIGINT", cerrar);
   process.once("SIGTERM", cerrar);
-} catch {
+} catch (error) {
   await conexion?.cliente.close();
   // No imprime la cadena de conexión, que podría contener credenciales.
-  console.error("No se pudo iniciar la API. Revisa MongoDB, MONGODB_URI, MONGODB_DB y PORT.");
+  console.error(error.name === "PreparacionProductosError"
+    ? error.message
+    : "No se pudo iniciar la API. Revisa MongoDB, MONGODB_URI, MONGODB_DB y PORT.");
   process.exitCode = 1;
 }

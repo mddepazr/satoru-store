@@ -7,7 +7,9 @@
     "start": "node --env-file-if-exists=.env src/server.js",
     "dev": "node --env-file-if-exists=.env --watch src/server.js",
     "seed": "node --env-file-if-exists=.env src/seed.js",
-    "test": "node --test"
+    "test": "node --test --test-reporter=spec --test-timeout=180000 --test-concurrency=1 test/unit/*.test.js test/integration/*.test.js",
+    "test:unit": "node --test --test-reporter=spec test/unit/*.test.js",
+    "test:integration": "node --test --test-reporter=spec --test-timeout=180000 --test-concurrency=1 test/integration/*.test.js"
   },
   "keywords": [],
   "author": "",
