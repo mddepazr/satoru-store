@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { once } from "node:events";
+import { MongoClient } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { conectarBaseDeDatos } from "../../src/config/database.js";
 import { prepararColeccionProductos } from "../../src/config/productos.collection.js";
@@ -31,6 +32,15 @@ export async function iniciarMongoPruebas() {
   return {
     get uri() { return mongo.getUri(); },
     async reiniciar() {
+      // En Windows, stop() termina el proceso sin un SIGINT de cierre ordenado.
+      // Vacía las escrituras a disco antes de reiniciar el MongoDB de la prueba.
+      const cliente = new MongoClient(mongo.getUri(), { serverSelectionTimeoutMS: 5000 });
+      try {
+        await cliente.connect();
+        await cliente.db("admin").command({ fsync: 1 });
+      } finally {
+        await cliente.close();
+      }
       await mongo.stop({ doCleanup: false, force: false });
       await iniciar();
     },

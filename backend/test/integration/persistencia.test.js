@@ -9,7 +9,10 @@ test("el producto permanece después de reiniciar API y MongoDB", async t => {
   const mongo = await iniciarMongoPruebas();
   t.after(() => mongo.cerrar());
   const inicial = await crearContexto(t, mongo);
-  const creado = (await (await inicial.post({ nombre: "Bocina", precio: 150, categoria: "Audio" })).json()).datos;
+  const respuestaCreacion = await inicial.post({ nombre: "Bocina", precio: 150, categoria: "Audio" });
+  assert.equal(respuestaCreacion.status, 201);
+  const creado = (await respuestaCreacion.json()).datos;
+  assert.equal(await inicial.coleccion.countDocuments(), 1);
   await inicial.cerrar();
   await mongo.reiniciar();
   const reiniciado = await crearContexto(t, mongo, inicial.nombre);
