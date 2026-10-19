@@ -1,0 +1,30 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> backend@1.0.0 test:integration
+> node --test --test-reporter=spec --test-timeout=180000 --test-concurrency=1 test/integration/*.test.js
+
+✔ el producto permanece después de reiniciar API y MongoDB (645.761449ms)
+✔ seed se puede repetir y conserva cambios y productos existentes (273.19614ms)
+✔ preparar la colección incorpora nombres antiguos sin cambiar los campos del producto (250.756664ms)
+✔ duplicados anteriores detienen la preparación sin borrar ni modificar documentos (235.258535ms)
+✔ MongoDB apagado produce una respuesta JSON 503 (3250.08585ms)
+✔ seed respeta un ejemplo que ya existe con otro identificador (273.64087ms)
+✔ GET /api/productos devuelve 200, un arreglo y los campos esperados (288.853817ms)
+✔ GET sin registros devuelve un arreglo vacío (36.512202ms)
+✔ POST válido devuelve 201 y guarda solamente los campos permitidos (48.746419ms)
+✔ POST con precio negativo devuelve 400 y no guarda el producto (31.315377ms)
+✔ POST rechaza nombres duplicados aunque cambien mayúsculas o espacios (40.193626ms)
+✔ dos POST simultáneos del mismo nombre crean solo un documento (26.85811ms)
+✔ POST maneja JSON mal formado con JSON 400 (20.68334ms)
+✔ POST maneja tipo de contenido incorrecto con JSON 415 (27.005031ms)
+✔ POST maneja solicitud mayor de 10 KB con JSON 413 (26.382059ms)
+✔ una ruta inexistente devuelve JSON 404 (21.97411ms)
+✔ un fallo inesperado devuelve JSON 500 sin revelar el detalle interno (6.004429ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6035.161014

@@ -1,0 +1,18 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> frontend@0.0.0 test
+> node --test --test-reporter=spec test/*.test.js
+
+✔ listarProductos consume el arreglo directo de GET (3.550077ms)
+✔ crearProducto envía JSON y devuelve datos del POST (0.464544ms)
+✔ un 409 conserva el mensaje y el error del campo nombre para el formulario (0.685399ms)
+✔ rechaza una respuesta GET que no sea un arreglo (0.350425ms)
+✔ muestra un error controlado si no hay conexión (0.398586ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84.537168

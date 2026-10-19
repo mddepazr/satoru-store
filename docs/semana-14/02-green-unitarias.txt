@@ -1,0 +1,19 @@
+✔ acepta un producto con nombre, precio y categoría válidos (1.087732ms)
+✔ rechaza un precio negativo (0.216339ms)
+✔ rechaza una categoría vacía (0.152996ms)
+✔ rechaza un nombre compuesto solo por espacios (0.146025ms)
+✔ rechaza null, arreglos y texto como producto (0.173485ms)
+✔ exige un precio numérico, finito, positivo y con hasta dos decimales (0.185283ms)
+✔ respeta los límites de longitud de nombre y categoría (0.204291ms)
+✔ normaliza mayúsculas y espacios para identificar nombres repetidos (0.379389ms)
+✔ validar no modifica el objeto recibido (0.22421ms)
+✔ el servicio no llama al almacenamiento cuando el precio es inválido (1.622519ms)
+✔ el servicio limpia espacios y omite campos elegidos por el cliente (0.709775ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.036443

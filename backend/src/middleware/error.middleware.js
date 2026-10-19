@@ -1,3 +1,4 @@
+import { ProductoDuplicadoError } from "../errors/producto-duplicado.error.js";
 import { MongoNetworkError, MongoServerSelectionError, MongoOperationTimeoutError } from "mongodb";
 
 // Express reconoce este middleware de errores por sus cuatro parámetros.
@@ -26,6 +27,10 @@ export function manejarError(error, req, res, next) {
       mensaje: error.message,
       errores: error.errores ?? {},
     });
+  }
+
+  if (error instanceof ProductoDuplicadoError) {
+    return res.status(409).json({ mensaje: error.message, errores: error.errores });
   }
 
   // Si MongoDB deja de responder, informa una falla temporal sin revelar la conexión.

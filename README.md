@@ -1,158 +1,135 @@
 # Satoru Store
 
-Catálogo de tecnología y accesorios desarrollado con React y Express.
-Permite consultar productos y agregar nuevos registros con nombre,
-precio y categoría.
+Catálogo de tecnología y accesorios con React, Express y MongoDB.
+Permite consultar y agregar productos con nombre, precio y categoría.
 
 ![Catálogo de Satoru Store](docs/01-catalogo.jpeg)
 
-## Funcionalidades
+## Funciones
 
-- Lista de productos obtenida desde una API propia.
-- Formulario para agregar productos.
-- Validaciones en frontend y backend.
-- Estados de carga, confirmación y error.
-- Opción de reintentar cuando falla la conexión.
-- Precios en quetzales e interfaz adaptable a pantallas pequeñas.
+- Catálogo obtenido desde una API propia y guardado en MongoDB.
+- Formulario con validaciones, confirmación y mensajes de error.
+- Nombres únicos: `Bocina`, `BOCINA` y ` Bocina ` se consideran el mismo nombre.
+- Estados de carga, error de conexión y reintento.
+- Precios en quetzales y diseño adaptable.
+- Pruebas unitarias y de integración automatizadas.
 
-Los productos se guardan en **MongoDB**, en la base `satoru_store`,
-colección `productos`. Permanecen después de reiniciar la API y MongoDB.
+## Ejecutar
 
-## Ejecutar el proyecto
+Requisitos: Node.js 24, Git y MongoDB Community local en ejecución.
+Compass es opcional para consultar los documentos.
 
-Requisitos: Node.js 24 LTS, Git y MongoDB Community instalado como servicio local.
-
-En Windows, descarga [MongoDB Community](https://www.mongodb.com/try/download/community)
-(MSI), elige instalación **Complete** y deja marcada **Install MongoD as a Service**.
-Compass es opcional: permite ver la colección y tomar una captura de la base.
-La conexión local es `mongodb://127.0.0.1:27017`; no necesitas Docker ni Atlas.
-
-```powershell
+```sh
 git clone https://github.com/mddepazr/satoru-store.git
 cd satoru-store
+npm --prefix backend ci
+npm --prefix frontend ci
+```
 
-npm.cmd --prefix backend ci
-npm.cmd --prefix frontend ci
+Copia `backend/.env.example` como `backend/.env`. En PowerShell:
+
+```powershell
 Copy-Item backend/.env.example backend/.env
-
-# MongoDB debe estar ejecutándose antes de cargar los ejemplos.
-npm.cmd --prefix backend run seed
 ```
 
-`seed` agrega los tres ejemplos sin borrar ni duplicar productos existentes.
-No se ejecuta al iniciar la API. Si ya tienes `backend/.env`, conserva su configuración.
-Para comprobar el servicio en PowerShell: `Get-Service MongoDB`.
-Si está detenido, inicia PowerShell como administrador y ejecuta `Start-Service MongoDB`.
+En Linux o macOS:
 
-Desde la raíz del proyecto, abre dos terminales.
-
-**Terminal 1 — API:**
-
-```powershell
-npm.cmd --prefix backend run dev
+```sh
+cp backend/.env.example backend/.env
 ```
 
-**Terminal 2 — React:**
+Desde la raíz, carga los ejemplos una vez e inicia la API:
 
-```powershell
-npm.cmd --prefix frontend run dev
+```sh
+npm --prefix backend run seed
+npm --prefix backend run dev
 ```
 
-Abre el catálogo en http://localhost:5173.
+En otra terminal:
 
-La API está disponible en http://127.0.0.1:3001/api/productos.
-Mantén ambas terminales abiertas. Para detenerlas, presiona Ctrl + C.
+```sh
+npm --prefix frontend run dev
+```
+
+Abre http://localhost:5173. API: http://127.0.0.1:3001/api/productos.
+En PowerShell puedes usar `npm.cmd` si `npm.ps1` está bloqueado.
+Para detener un servidor, pulsa Ctrl+C.
+
+MongoDB utiliza `satoru_store`, colección `productos`.
+Los datos permanecen tras reiniciar. `seed` se puede repetir sin borrar ni sobrescribir
+productos existentes. `.env` contiene `MONGODB_URI`, `MONGODB_DB` y `PORT` y no se sube a Git.
+
+## Actualizar desde la versión anterior
+
+Detén la API anterior antes de iniciar esta rama. El inicio incorpora
+`nombreNormalizado` a los documentos existentes y crea el índice único.
+Conserva nombres, precios, categorías e identificadores.
+Si detecta nombres duplicados, informa sus ids y se detiene antes de modificar
+los documentos. Revisa esos registros en Compass, asigna nombres distintos y
+vuelve a iniciar. Ningún producto se elimina automáticamente.
+
+La comparación normaliza Unicode, mayúsculas y espacios sobrantes, conservando
+acentos. La unicidad es global por nombre, aunque cambien precio o categoría.
 
 ## API
 
-| Método | Ruta | Resultado |
+| Método | Ruta | Respuesta |
 |---|---|---|
-| GET | `/api/productos` | Lista de productos, HTTP 200 |
-| POST | `/api/productos` | Producto creado, HTTP 201 |
+| GET | `/api/productos` | 200 y arreglo de productos |
+| POST | `/api/productos` | 201 y objeto con `mensaje` y `datos` |
 
-Ejemplo del cuerpo de una solicitud POST:
+GET devuelve directamente `[{ id, nombre, precio, categoria }]`.
+En la versión anterior devolvía `{ datos: [...] }`; el cliente React ya está adaptado.
+
+Cuerpo del POST con `Content-Type: application/json`:
 
 ```json
-{
-  "nombre": "Cámara web",
-  "precio": 325,
-  "categoria": "Accesorios"
-}
+{ "nombre": "Cámara web", "precio": 325, "categoria": "Accesorios" }
 ```
 
-El POST requiere `Content-Type: application/json`.
-Los datos inválidos reciben una respuesta HTTP 400 con un mensaje
-y los errores correspondientes.
+Nombre: 2–80 caracteres. Categoría: 2–40. Precio: número mayor que cero,
+hasta Q1,000,000 y máximo dos decimales. Datos inválidos: 400.
+Nombre repetido: 409 y mensaje para el campo nombre. MongoDB no disponible: 503.
+El índice único protege también dos envíos simultáneos del mismo nombre.
+`nombreNormalizado` es interno; la API no lo entrega al frontend.
 
-El nombre admite de 2 a 80 caracteres y la categoría de 2 a 40.
-El precio debe ser numérico, mayor que cero, no superar Q1,000,000
-y tener hasta dos decimales.
+## Organización y flujo
 
-## Cómo funciona
-
-El usuario completa el formulario. React valida los campos y envía
-una solicitud con `fetch`. La API recibe el JSON, valida los datos
-y guarda el producto en MongoDB. Después devuelve el registro creado
-y React lo incorpora a la lista.
-
-Durante el desarrollo, Vite redirige las solicitudes `/api` a Express.
-El frontend comprueba la respuesta HTTP y muestra mensajes cuando
-la solicitud falla.
-
-## Organización
+El usuario completa el formulario. React valida y envía un POST. Express recibe el
+JSON; el servicio aplica las reglas y el repositorio guarda el documento en MongoDB.
+La API confirma el producto y React actualiza la tabla. GET vuelve a consultar la colección.
 
 | Ubicación | Responsabilidad |
 |---|---|
-| `backend/src/routes` | Rutas HTTP |
-| `backend/src/controllers` | Solicitudes y respuestas JSON |
-| `backend/src/services` | Validación y reglas de productos |
-| `backend/src/repositories` | Consultas y escrituras en MongoDB |
-| `backend/src/config` | Conexión a la base de datos |
-| `backend/src/middleware` | Manejo central de errores |
+| `backend/src/routes` y `controllers` | Rutas y respuestas HTTP |
+| `backend/src/validators` y `domain` | Reglas de campos y normalización del nombre |
+| `backend/src/services` | Coordinar validación y almacenamiento |
+| `backend/src/repositories` y `config` | Acceso a MongoDB y preparación del índice |
+| `backend/src/middleware` y `errors` | Errores HTTP y conflicto de duplicados |
+| `backend/test/unit` y `integration` | Pruebas aisladas y del sistema integrado |
 | `frontend/src/services` | Comunicación con la API |
-| `frontend/src/components` | Formulario y tabla |
-| `frontend/src/App.jsx` | Estado y coordinación de la pantalla |
-| `docs` | Capturas de funcionamiento |
+| `frontend/src/components` y `App.jsx` | Formulario, tabla y estados de pantalla |
 
-El servicio recibe el repositorio por inyección de dependencias.
-El repositorio implementa `listar()` y `crear()` usando el controlador oficial de MongoDB.
-Internamente los documentos tienen `_id`; la API lo devuelve como `id` para React.
-La conexión se abre antes de iniciar Express y se cierra al detenerlo con Ctrl + C.
-Si MongoDB falla durante una consulta, la API devuelve JSON con estado 503.
+## Pruebas y evidencias
 
-La configuración está en `backend/.env`: `MONGODB_URI`, `MONGODB_DB` y `PORT`.
-Este archivo no se sube a GitHub; `.env.example` contiene valores locales de ejemplo.
-Los productos del antiguo arreglo temporal no se migran automáticamente.
-
-## Verificación y evidencias
-
-```powershell
-npm.cmd --prefix backend test
-npm.cmd --prefix frontend run build
-npm.cmd --prefix frontend run lint
+```sh
+npm --prefix backend test
+npm --prefix frontend test
+npm --prefix frontend run build
+npm --prefix frontend run lint
 ```
 
-Las pruebas usan un proceso MongoDB real y aislado; la primera ejecución descarga
-el binario de prueba y necesita internet. Comprueban persistencia tras reiniciar
-API y MongoDB, validaciones, carga inicial repetible y respuestas de error.
-No modifican `satoru_store`.
+Las pruebas usan `node:test`. Las de integración inician un MongoDB real aislado,
+sin tocar tu base local. La primera ejecución descarga el binario y necesita internet.
+[Casos, resultados y capturas de semana 14](docs/pruebas-semana-14.md).
 
-| Evidencia | Captura |
-|---|---|
-| Catálogo y producto agregado | [Ver](docs/01-catalogo.jpeg) |
-| Validación de campos vacíos | [Ver](docs/02-campos-vacios.jpeg) |
-| Rechazo de precio negativo | [Ver](docs/03-precio-negativo.jpeg) |
-| Error de conexión y reintento | [Ver](docs/04-error-conexion.jpeg) |
-| Respuesta JSON de la API | [Ver](docs/05-respuesta-json.jpeg) |
-| Documentos guardados en MongoDB Compass | [Ver](docs/06-mongodb-productos.png) |
-| Catálogo después de reiniciar la API | [Ver](docs/07-producto-persistente.jpeg) |
-| Confirmación de producto agregado | [Ver](docs/08-producto-agregado.jpeg) |
-
-[Pasos para comprobar la persistencia y explicar el flujo](docs/verificar-mongodb.md).
-
-El proyecto corresponde a una demostración local.
-La compilación genera el frontend; un despliegue requiere configurar
-cómo se servirán esos archivos y cómo accederán a la API.
+Evidencias anteriores: [catálogo](docs/01-catalogo.jpeg),
+[campos vacíos](docs/02-campos-vacios.jpeg), [precio negativo](docs/03-precio-negativo.jpeg),
+[conexión](docs/04-error-conexion.jpeg), [JSON anterior](docs/05-respuesta-json.jpeg),
+[MongoDB](docs/06-mongodb-productos.png), [persistencia](docs/07-producto-persistente.jpeg)
+y [creación](docs/08-producto-agregado.jpeg).
+La captura JSON anterior conserva el formato previo; para semana 14 toma una nueva
+respuesta GET con el arreglo directo.
 
 ## Autor
 
